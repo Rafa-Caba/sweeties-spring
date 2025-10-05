@@ -1,0 +1,24 @@
+# macOS
+.DS_Store
+
+# IntelliJ / IDEA
+.idea/
+*.iml
+out/
+
+# VS Code
+.vscode/
+
+# Build outputs
+target/
+build/
+
+# Logs
+*.log
+*.pid
+
+# Env files (keep secrets out of Git)
+.env.local
+
+# Maven wrapper cache (if present)
+.mvn/wrapper/maven-wrapper.jar
