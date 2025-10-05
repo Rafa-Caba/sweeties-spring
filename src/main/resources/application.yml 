@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: sweeties
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:${HOST:localhost}}:${DB_PORT:5432}/${DB_NAME:sweeties_db}
+    username: ${DB_USER:admin@admin.com}
+    password: ${DB_PASS:admin}
+
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+
+  security:
+    user:
+      name: ${ADMIN_USER:admin}
+      password: ${ADMIN_PASSWORD:123456}
+      roles: ${ADMIN_ROLES:ADMIN}
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    teams:
+      enabled: false
+    ignore-missing-migrations: true
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+    default-encoding: UTF-8
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+  api-key: ${CLOUDINARY_API_KEY:}
+  api-secret: ${CLOUDINARY_API_SECRET:}
