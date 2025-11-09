@@ -1,0 +1,6 @@
+CREATE TABLE item_sizes (
+    item_id BIGINT NOT NULL,
+    alto DOUBLE PRECISION,
+    ancho DOUBLE PRECISION,
+    FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
+);
