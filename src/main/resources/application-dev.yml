@@ -29,6 +29,6 @@ logging:
     com.rafaelcabanillas.sweeties: DEBUG
 
 cloudinary:
-  cloud_name: ${CLOUDINARY_CLOUD_NAME:dr6b4izzt}
-  api_key: ${CLOUDINARY_API_KEY:764232222658472}
-  api_secret: ${CLOUDINARY_API_SECRET:uetGVSOjLMXIP-jmnhCy3WNNL8s}
+  cloud_name: ${CLOUDINARY_CLOUD_NAME}
+  api_key: ${CLOUDINARY_API_KEY}
+  api_secret: ${CLOUDINARY_API_SECRET}
