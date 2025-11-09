@@ -1,0 +1,4 @@
+ALTER TABLE users
+ADD COLUMN bio VARCHAR(255),
+ADD COLUMN image_public_id VARCHAR(255),
+ADD COLUMN image_url VARCHAR(255);
