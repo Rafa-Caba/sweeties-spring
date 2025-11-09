@@ -2,23 +2,19 @@ spring:
   profiles:
     active: dev
 
-  application:
-    name: sweeties
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:sweeties_db}
+    username: ${DB_USER:sweeties_user}
+    password: ${DB_PASS:secret}
+    driver-class-name: org.postgresql.Driver
 
-    datasource:
-      url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:sweeties_db}
-      username: ${DB_USER:sweeties_user}
-      password: ${DB_PASS:secret}
-      driver-class-name: org.postgresql.Driver
-
-    flyway:
-      enabled: true
-      url: ${spring.datasource.url}
-      user: ${spring.datasource.username}
-      password: ${spring.datasource.password}
-      locations: classpath:db/migration
-      baseline-on-migrate: true
-      clean-disabled: true
+  flyway:
+    enabled: true
+    # You DON'T need to set url/user/pass again.
+    # Flyway will automatically use the main spring.datasource.
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    clean-disabled: true
 
   jpa:
     open-in-view: false
@@ -51,16 +47,17 @@ spring:
 sweeties:
   admin-email: ${ADMIN_EMAIL:sweeties_crochet@infinitummail.com}
 
+application:
+  name: sweeties
+
 logging:
   level:
-    root: ERROR
-    org.springframework.web: DEBUG
-    com.rafaelcabanillas.sweeties: TRACE
+    org:
+      springframework:
+        web: DEBUG
 
 server:
-  error:
-    include-message: always
-    include-stacktrace: always
+  port: 8080
 
 jwt:
   secret: ${JWT_SECRET:change-me}
