@@ -8,4 +8,6 @@ public interface RefreshTokenService {
     boolean isValid(String token);
     User getUserFromToken(String token);
     void deleteToken(String token);
+
+    RefreshToken rotateToken(String oldToken);
 }

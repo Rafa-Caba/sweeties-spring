@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Nuevo Pedido</title>
+</head>
+<body>
+<h1>¡Nuevo Pedido Recibido!</h1>
+<p>Has recibido un nuevo pedido de: <strong th:text="${order.name}">Cliente</strong></p>
+<ul>
+    <li><strong>Email:</strong> <span th:text="${order.email}"></span></li>
+    <li><strong>Teléfono:</strong> <span th:text="${order.phone}"></span></li>
+    <li><strong>Total:</strong> $<span th:text="${#numbers.formatDecimal(order.total, 1, 'COMMA', 2, 'POINT')}"></span></li>
+</ul>
+<p><strong>Nota del cliente:</strong> <span th:text="${order.note}"></span></p>
+<p>Ver los detalles completos en el panel de administración.</p>
+</body>
+</html>

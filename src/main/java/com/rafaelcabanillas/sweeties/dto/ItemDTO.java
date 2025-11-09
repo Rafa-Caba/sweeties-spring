@@ -1,6 +1,8 @@
 package com.rafaelcabanillas.sweeties.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
+
 import java.util.List;
 
 @Data
@@ -18,7 +20,11 @@ public class ItemDTO {
     private List<SizeDTO> size;
     private List<String> sprites;
     private List<String> spritesPublicIds;
+
+    @JsonProperty("isFeatured")
     private boolean isFeatured;
+
+    @JsonProperty("isVisible")
     private boolean isVisible;
 
     // Virtuals for frontend naming

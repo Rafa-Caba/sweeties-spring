@@ -34,20 +34,29 @@ public class Item {
 
     private String imagePublicId;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "item_materials",
+            joinColumns = @JoinColumn(name = "item_id")
+    )
+    @Column(name = "material", nullable = false)
     @Builder.Default
     private List<String> materials = new ArrayList<>();
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "item_sizes", joinColumns = @JoinColumn(name = "item_id"))
     @Builder.Default
     private List<Size> size = new ArrayList<>();
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "item_sprites", joinColumns = @JoinColumn(name = "item_id"))
+    @Column(name = "sprite_url")
     @Builder.Default
     private List<String> sprites = new ArrayList<>();
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "item_sprite_public_ids", joinColumns = @JoinColumn(name = "item_id"))
+    @Column(name = "sprite_public_id")
     @Builder.Default
     private List<String> spritesPublicIds = new ArrayList<>();
 

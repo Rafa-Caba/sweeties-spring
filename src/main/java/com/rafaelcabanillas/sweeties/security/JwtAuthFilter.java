@@ -12,42 +12,61 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.*;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
 import java.io.IOException;
 import java.security.Key;
 import java.util.*;
 
 @Component
-public class JwtAuthFilter extends GenericFilter {
+public class JwtAuthFilter extends OncePerRequestFilter {
 
-    // Use a strong secret, not hardcoded in prod!
     private static final String SECRET = "very-strong-secret-key-for-jwt-signing-must-be-256-bit";
     private static final Key KEY = Keys.hmacShaKeyFor(SECRET.getBytes());
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
-        HttpServletRequest req = (HttpServletRequest) request;
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.startsWith("/api/auth/")
+                || path.startsWith("/api/public/")
+//                || path.equals("/api/orders")
+                || path.equals("/error");
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+            throws ServletException, IOException {
+
         String authHeader = req.getHeader("Authorization");
+
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String jwt = authHeader.substring(7);
             try {
-                Claims claims = Jwts.parserBuilder().setSigningKey(KEY).build().parseClaimsJws(jwt).getBody();
+                Claims claims = Jwts.parserBuilder()
+                        .setSigningKey(KEY)
+                        .build()
+                        .parseClaimsJws(jwt)
+                        .getBody();
+
                 String username = claims.getSubject();
                 List<GrantedAuthority> authorities = new ArrayList<>();
                 Object roles = claims.get("roles");
+
                 if (roles instanceof String roleStr) {
                     authorities.add(new SimpleGrantedAuthority("ROLE_" + roleStr));
-                } else if (roles instanceof Collection<?>) {
-                    for (Object role : (Collection<?>) roles) {
+                } else if (roles instanceof Collection<?> coll) {
+                    for (Object role : coll) {
                         authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
                     }
                 }
+
                 Authentication auth = new UsernamePasswordAuthenticationToken(username, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(auth);
-            } catch (JwtException e) {
-                // invalid token, ignore (will result in 401 for protected routes)
+            } catch (JwtException ignored) {
+                // invalid token → fall through to 401 by entry point
             }
         }
-        chain.doFilter(request, response);
+        chain.doFilter(req, res);
     }
 }
+

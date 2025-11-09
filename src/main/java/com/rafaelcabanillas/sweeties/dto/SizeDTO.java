@@ -1,5 +1,6 @@
 package com.rafaelcabanillas.sweeties.dto;
 
+import jakarta.validation.constraints.Min;
 import lombok.*;
 
 @Data
@@ -7,6 +8,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class SizeDTO {
-    private Double alto;
-    private Double ancho;
+    @Min(0) private Double alto;
+    @Min(0) private Double ancho;
 }

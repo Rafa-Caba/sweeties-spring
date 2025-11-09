@@ -1,7 +1,9 @@
 package com.rafaelcabanillas.sweeties.dto;
 
-import lombok.*;
 import jakarta.validation.constraints.*;
+import lombok.*;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -9,15 +11,23 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class CreateItemDTO {
+
     @NotBlank
     private String name;
+
     @NotBlank
     private String description;
-    @NotNull
-    @Min(0)
+
+    @NotNull @Min(0)
     private Double price;
-    private List<String> materials;
+
+    @Builder.Default
+    private List<String> materials = new ArrayList<>();
+
+    // Optional sizes
     private List<SizeDTO> size;
-    private boolean isFeatured;
-    private boolean isVisible;
+
+    // Optional flags (defaults if null)
+    private Boolean isFeatured; // if null, service/controller can default to false
+    private Boolean isVisible;  // if null, service/controller can default to true
 }

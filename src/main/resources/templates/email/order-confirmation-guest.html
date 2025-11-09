@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Confirmación de Pedido</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; }
+        .container { width: 90%; margin: 20px auto; padding: 20px; border: 1px solid #ddd; }
+        .header { font-size: 24px; color: #d63384; } /* A "sweeties" color */
+        .order-details { margin-top: 20px; }
+        .order-details th, .order-details td { padding: 8px; border-bottom: 1px solid #eee; }
+        .footer { margin-top: 30px; font-size: 12px; color: #888; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="header">¡Gracias por tu pedido, <span th:text="${order.name}">Cliente</span>!</h1>
+    <p>Hemos recibido tu pedido y te avisaremos en cuanto se envíe.</p>
+
+    <div class="order-details">
+        <p><strong>Número de Pedido:</strong> <span th:text="${order.id}">#0000</span></p>
+        <p><strong>Total:</strong> $<span th:text="${#numbers.formatDecimal(order.total, 1, 'COMMA', 2, 'POINT')}">0.00</span></p>
+
+        <h3>Resumen del Pedido</h3>
+        <table width="100%">
+            <thead>
+            <tr>
+                <th align="left">Producto</th>
+                <th align="right">Cantidad</th>
+                <th align="right">Precio</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${order.items}">
+                <td th:text="${item.name}">Producto</td>
+                <td align="right" th:text="${item.quantity}">1</td>
+                <td align="right" th:text="${#numbers.formatDecimal(item.price, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        <p>© Sweeties | Crochet Arts</p>
+    </div>
+</div>
+</body>
+</html>

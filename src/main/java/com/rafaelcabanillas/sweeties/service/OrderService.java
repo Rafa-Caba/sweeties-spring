@@ -13,7 +13,6 @@ public interface OrderService {
     OrderDTO createOrder(CreateOrderDTO dto);
     OrderDTO getOrderById(Long id);
     OrderDTO updateOrderStatus(Long id, String status);
-    List<OrderDTO> getAllOrders();
     List<OrderDTO> getOrdersByStatus(String status, int page, int size);
     void exportOrdersAsCsv(Writer writer) throws IOException;
     void deleteOrder(Long id);

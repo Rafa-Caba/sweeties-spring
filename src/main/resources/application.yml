@@ -1,28 +1,32 @@
 spring:
+  profiles:
+    active: dev
+
   application:
     name: sweeties
 
-  datasource:
-    url: jdbc:postgresql://${DB_HOST:${HOST:localhost}}:${DB_PORT:5432}/${DB_NAME:sweeties_db}
-    username: ${DB_USER}
-    password: ${DB_PASS}
+    datasource:
+      url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:sweeties_db}
+      username: ${DB_USER:sweeties_user}
+      password: ${DB_PASS:secret}
+      driver-class-name: org.postgresql.Driver
 
-  flyway:
-    url: ${spring.datasource.url}
-    user: ${spring.datasource.username}
-    password: ${spring.datasource.password}
-    enabled: true
-    locations: classpath:db/migration
-    ignore-missing-migrations: true
+    flyway:
+      enabled: true
+      url: ${spring.datasource.url}
+      user: ${spring.datasource.username}
+      password: ${spring.datasource.password}
+      locations: classpath:db/migration
+      baseline-on-migrate: true
+      clean-disabled: true
 
   jpa:
-    show-sql: true
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
     properties:
       hibernate:
         format_sql: true
-    hibernate:
-      ddl-auto: none
-    open-in-view: false
 
   security:
     user:
@@ -31,28 +35,38 @@ spring:
       roles: ${ADMIN_ROLES:ADMIN}
 
   mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
+    host: ${MAIL_HOST:smtp.infinitummail.com}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     protocol: smtp
     properties:
       mail:
         smtp:
           auth: true
-          starttls:
+          ssl:
             enable: true
     default-encoding: UTF-8
 
+sweeties:
+  admin-email: ${ADMIN_EMAIL:sweeties_crochet@infinitummail.com}
+
 logging:
   level:
-    org.springframework.security: DEBUG
+    root: ERROR
+    org.springframework.web: DEBUG
+    com.rafaelcabanillas.sweeties: TRACE
+
+server:
+  error:
+    include-message: always
+    include-stacktrace: always
 
 jwt:
   secret: ${JWT_SECRET:change-me}
   expiration: ${JWT_EXPIRATION:86400000}
 
 cloudinary:
-  cloud-name: ${CLOUDINARY_CLOUD_NAME:}
-  api-key: ${CLOUDINARY_API_KEY:}
-  api-secret: ${CLOUDINARY_API_SECRET:}
+  cloud_name: ${CLOUDINARY_CLOUD_NAME:dr6b4izzt}
+  api_key: ${CLOUDINARY_API_KEY:764232222658472}
+  api_secret: ${CLOUDINARY_API_SECRET:uetGVSOjLMXIP-jmnhCy3WNNL8s}

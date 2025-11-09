@@ -12,4 +12,5 @@ public interface UserService {
     void updateUserImage(Long id, String imageUrl, String imagePublicId);
     void deleteUser(Long id);
     UserDTO getProfile(Long userId);
+    UserDTO getByUsername(String username);
 }

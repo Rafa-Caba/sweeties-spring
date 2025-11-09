@@ -30,7 +30,7 @@ public class Order {
 
     private String note;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "order_items", joinColumns = @JoinColumn(name = "order_id"))
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
@@ -38,15 +38,18 @@ public class Order {
     @NotNull @Min(0)
     private Double total;
 
-    @NotBlank
+    @Enumerated(EnumType.STRING) // Tells JPA to save as "PENDIENTE", "ENVIADO", etc.
+    @Column(nullable = false, length = 20) // Good to add
     @Builder.Default
-    private String status = "pendiente"; // pendiente | enviado | entregado
+    private OrderStatus status = OrderStatus.PENDIENTE;
 
     @Builder.Default
     private OffsetDateTime createdAt = OffsetDateTime.now();
 
     @Builder.Default
     private OffsetDateTime updatedAt = OffsetDateTime.now();
+
+    public enum OrderStatus { PENDIENTE, ENVIADO, ENTREGADO }
 
     @PreUpdate
     public void onUpdate() { this.updatedAt = OffsetDateTime.now(); }

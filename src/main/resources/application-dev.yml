@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sweeties_db
+    username: sweeties_user
+    password: secret
+    driver-class-name: org.postgresql.Driver
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    clean-disabled: true
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: on_param
+
+logging:
+  level:
+    com.rafaelcabanillas.sweeties: DEBUG
+
+cloudinary:
+  cloud_name: ${CLOUDINARY_CLOUD_NAME:dr6b4izzt}
+  api_key: ${CLOUDINARY_API_KEY:764232222658472}
+  api_secret: ${CLOUDINARY_API_SECRET:uetGVSOjLMXIP-jmnhCy3WNNL8s}

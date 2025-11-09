@@ -40,6 +40,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public UserDTO getByUsername(String username) {
+        return userRepository.findByUsername(username.toLowerCase())
+                .map(this::toUserDTO)
+                .orElseThrow(() -> new ResourceNotFoundException("El usuario no existe"));
+    }
+
+    @Override
     public List<UserDTO> getAllUsers() {
         return userRepository.findAll().stream().map(this::toUserDTO).toList();
     }

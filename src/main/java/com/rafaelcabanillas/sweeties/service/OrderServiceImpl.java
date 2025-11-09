@@ -1,5 +1,3 @@
-// package: com.rafaelcabanillas.sweeties.service
-
 package com.rafaelcabanillas.sweeties.service;
 
 import com.rafaelcabanillas.sweeties.dto.*;
@@ -7,18 +5,23 @@ import com.rafaelcabanillas.sweeties.model.Order;
 import com.rafaelcabanillas.sweeties.model.OrderItem;
 import com.rafaelcabanillas.sweeties.repository.OrderRepository;
 import com.rafaelcabanillas.sweeties.exception.ResourceNotFoundException;
+import jakarta.persistence.criteria.Predicate; // Make sure this is imported
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification; // Make sure this is imported
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.time.OffsetDateTime;
+import java.util.ArrayList; // Make sure this is imported
 import java.util.List;
 import java.util.stream.Collectors;
-import org.springframework.data.domain.*;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final EmailService emailService;
@@ -37,20 +40,24 @@ public class OrderServiceImpl implements OrderService {
                                 .price(i.getPrice())
                                 .quantity(i.getQuantity())
                                 .build())
-                        .collect(Collectors.toList()))
+                        .collect(Collectors.toList())) // This is still correct!
                 .total(dto.getTotal())
-                .status("pendiente")
+                .status(Order.OrderStatus.PENDIENTE) // <-- FIX 1: Use the Enum
                 .build();
         orderRepository.save(order);
 
         OrderDTO savedOrder = toOrderDTO(order);
 
         try {
-            emailService.sendOrderConfirmationToGuest(savedOrder.getEmail(), savedOrder);
-            emailService.sendOrderConfirmationToAdmin("admin@sweeties.com", savedOrder); // Replace as needed
-        } catch (Exception ex) {
+            // Updated method signatures (no 'to' param needed)
+            emailService.sendOrderConfirmationToGuest(savedOrder);
+            emailService.sendOrderConfirmationToAdmin(savedOrder);
+        } catch (Exception ex) { // Catch the general Exception
             // Log but do not fail the order creation!
+            // We can now use the Slf4j logger
+            log.error("Failed to send order confirmation emails for order ID {}", savedOrder.getId(), ex);
         }
+
         return savedOrder;
     }
 
@@ -58,11 +65,18 @@ public class OrderServiceImpl implements OrderService {
     public OrderDTO updateOrderStatus(Long id, String status) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("El pedido no existe"));
-        // Only allow allowed status values
-        List<String> allowed = List.of("pendiente", "enviado", "entregado");
-        if (!allowed.contains(status))
-            throw new IllegalArgumentException("Estado inválido.");
-        order.setStatus(status);
+
+        Order.OrderStatus newStatus;
+        try {
+            // Convert string "ENVIADO" to Enum OrderStatus.ENVIADO
+            newStatus = Order.OrderStatus.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            // This catches any invalid string (like "foo" or "pendiente ")
+            throw new IllegalArgumentException("Estado inválido: " + status);
+        }
+
+        order.setStatus(newStatus);
+
         orderRepository.save(order);
         return toOrderDTO(order);
     }
@@ -78,8 +92,15 @@ public class OrderServiceImpl implements OrderService {
     public List<OrderDTO> getOrdersByStatus(String status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Order> orders;
+
         if (status != null && !status.isEmpty()) {
-            orders = orderRepository.findByStatus(status, pageable);
+            try {
+                Order.OrderStatus queryStatus = Order.OrderStatus.valueOf(status.toUpperCase());
+                orders = orderRepository.findByStatus(queryStatus, pageable);
+            } catch (IllegalArgumentException e) {
+                // Invalid status string, return empty
+                return new ArrayList<>();
+            }
         } else {
             orders = orderRepository.findAll(pageable);
         }
@@ -92,27 +113,59 @@ public class OrderServiceImpl implements OrderService {
             String phone, String email, int page, int size) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Order> orders = orderRepository
-                .findByStatusAndCreatedAtBetweenAndTotalBetweenAndPhoneContainingAndEmailContaining(
-                        status, from, to, minTotal, maxTotal, phone, email, pageable
-                );
+
+        Specification<Order> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (status != null && !status.isBlank()) {
+                try {
+                    Order.OrderStatus specStatus = Order.OrderStatus.valueOf(status.toUpperCase());
+                    predicates.add(cb.equal(root.get("status"), specStatus));
+                } catch (IllegalArgumentException e) {
+                    // Invalid status, add a predicate that returns nothing
+                    predicates.add(cb.disjunction()); // or just ignore it
+                }
+            }
+
+            if (phone != null && !phone.isBlank()) {
+                predicates.add(cb.like(root.get("phone"), "%" + phone + "%"));
+            }
+            if (email != null && !email.isBlank()) {
+                predicates.add(cb.like(root.get("email"), "%" + email + "%"));
+            }
+            if (minTotal != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("total"), minTotal));
+            }
+            if (maxTotal != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("total"), maxTotal));
+            }
+
+            if (from != null && to != null) {
+                predicates.add(cb.between(root.get("createdAt"), from, to));
+            } else if (from != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), from));
+            } else if (to != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), to));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Page<Order> orders = orderRepository.findAll(spec, pageable);
+
         return orders.stream().map(this::toOrderDTO).toList();
     }
 
-
-    @Override
-    public List<OrderDTO> getAllOrders() {
-        return orderRepository.findAll().stream().map(this::toOrderDTO).toList();
-    }
-
     public void exportOrdersAsCsv(Writer writer) throws IOException {
-        List<OrderDTO> orders = getAllOrders();
+        List<Order> orders = orderRepository.findAll(Sort.by("createdAt").descending());
+        List<OrderDTO> orderDtos = orders.stream().map(this::toOrderDTO).toList();
+
         writer.write("id,name,email,phone,total,status,createdAt,updatedAt\n");
-        for (OrderDTO order : orders) {
+        for (OrderDTO order : orderDtos) {
             writer.write(String.format(
                     "%d,%s,%s,%s,%.2f,%s,%s,%s\n",
                     order.getId(), order.getName(), order.getEmail(), order.getPhone(),
-                    order.getTotal(), order.getStatus(), order.getCreatedAt(), order.getUpdatedAt()
+                    order.getTotal(), order.getCreatedAt(), order.getUpdatedAt()
             ));
         }
         writer.flush();
@@ -144,7 +197,9 @@ public class OrderServiceImpl implements OrderService {
                         ).collect(Collectors.toList())
                         : null)
                 .total(order.getTotal())
-                .status(order.getStatus())
+                // --- FIX 5: Convert Enum back to string for the DTO ---
+                .status(order.getStatus() != null ? order.getStatus().name() : null)
+                // --- End of Fix 5 ---
                 .createdAt(order.getCreatedAt() != null ? order.getCreatedAt().toString() : null)
                 .updatedAt(order.getUpdatedAt() != null ? order.getUpdatedAt().toString() : null)
                 .build();

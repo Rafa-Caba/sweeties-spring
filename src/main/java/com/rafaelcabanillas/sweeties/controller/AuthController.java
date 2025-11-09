@@ -1,19 +1,23 @@
 package com.rafaelcabanillas.sweeties.controller;
 
-import com.rafaelcabanillas.sweeties.model.User.Role;
-
-import com.rafaelcabanillas.sweeties.dto.*;
-import com.rafaelcabanillas.sweeties.model.User;
+import com.rafaelcabanillas.sweeties.dto.AuthResponseDTO;
+import com.rafaelcabanillas.sweeties.dto.LoginRequestDTO;
+import com.rafaelcabanillas.sweeties.dto.RefreshRequestDTO;
+import com.rafaelcabanillas.sweeties.dto.RegisterRequestDTO;
 import com.rafaelcabanillas.sweeties.model.RefreshToken;
+import com.rafaelcabanillas.sweeties.model.User;
+import com.rafaelcabanillas.sweeties.model.User.Role;
 import com.rafaelcabanillas.sweeties.repository.UserRepository;
 import com.rafaelcabanillas.sweeties.service.RefreshTokenService;
 import com.rafaelcabanillas.sweeties.util.JwtUtil;
+import com.rafaelcabanillas.sweeties.exception.TokenRefreshException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -26,16 +30,16 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    // 1. LOGIN
-    @PostMapping("/login")
-    public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO req) {
+    // -------------------- LOGIN --------------------
+    @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDTO req) {
         Optional<User> userOpt = userRepository.findByEmail(req.getEmail());
         if (userOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+            return unauthorized("Invalid credentials");
         }
         User user = userOpt.get();
         if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+            return unauthorized("Invalid credentials");
         }
 
         String accessToken = jwtUtil.generateToken(user);
@@ -48,48 +52,36 @@ public class AuthController {
                 .build());
     }
 
-    // 2. REFRESH TOKEN
-    @PostMapping("/refresh")
-    public ResponseEntity<AuthResponseDTO> refresh(@Valid @RequestBody RefreshRequestDTO req) {
-        String refreshToken = req.getRefreshToken();
-        if (!refreshTokenService.isValid(refreshToken)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
-        }
-        User user = refreshTokenService.getUserFromToken(refreshToken);
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
-        }
-        String newAccessToken = jwtUtil.generateToken(user);
-        RefreshToken newRefreshToken = refreshTokenService.createToken(user, 60 * 24 * 7);
-        refreshTokenService.deleteToken(refreshToken); // Rotate token
-
-        return ResponseEntity.ok(AuthResponseDTO.builder()
-                .accessToken(newAccessToken)
-                .refreshToken(newRefreshToken.getToken())
-                .role(user.getRole().name())
-                .build());
-    }
-
-    // 3. LOGOUT
-    @PostMapping("/logout")
+    // -------------------- LOGOUT --------------------
+    @PostMapping(value = "/logout", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> logout(@Valid @RequestBody RefreshRequestDTO req) {
+        // Idempotent: deleting a non-existent token is fine
         refreshTokenService.deleteToken(req.getRefreshToken());
-        return ResponseEntity.ok().body(new MessageResponseDTO("Logout successful"));
+        return ResponseEntity.ok(Map.of("message", "Logout successful"));
     }
 
-    // 4. REGISTER (optional, you can remove if not needed)
-    @PostMapping("/register")
-    public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody RegisterRequestDTO req) {
-        if (userRepository.findByEmail(req.getEmail()).isPresent()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(null);
+    // -------------------- REGISTER --------------------
+    @PostMapping(value = "/register", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequestDTO req) {
+        // Uniqueness checks (case-insensitive username handling on our side)
+        Optional<User> byEmail = userRepository.findByEmail(req.getEmail());
+        if (byEmail.isPresent()) {
+            return conflict("Email already in use");
         }
+        Optional<User> byUsername = userRepository.findByUsername(req.getUsername().toLowerCase());
+        if (byUsername.isPresent()) {
+            return conflict("Username already in use");
+        }
+
+        // Create user (normalize username to lowercase)
         User user = User.builder()
-                .username(req.getUsername())
+                .name(req.getName())
+                .username(req.getUsername().toLowerCase())
                 .email(req.getEmail())
                 .password(passwordEncoder.encode(req.getPassword()))
-                .role(Role.ADMIN) // Or allow setting via req, up to you
+                .role(Role.ADMIN) // TODO: change to desired default (ADMIN/GUEST/VIEWER) or from req
                 .build();
+
         userRepository.save(user);
 
         String accessToken = jwtUtil.generateToken(user);
@@ -103,10 +95,38 @@ public class AuthController {
                         .build());
     }
 
-    // Helper DTO for logout
-    @lombok.Data
-    @lombok.AllArgsConstructor
-    static class MessageResponseDTO {
-        private String message;
+    // -------------------- REFRESH (ROTATE) --------------------
+    @PostMapping(value = "/refresh", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> refresh(@Valid @RequestBody RefreshRequestDTO req) {
+
+        try {
+            // 1. Call the single service method
+            RefreshToken newRefreshToken = refreshTokenService.rotateToken(req.getRefreshToken());
+
+            // 2. Get the user from the result
+            User user = newRefreshToken.getUser();
+
+            // 3. Generate the new access token
+            String newAccessToken = jwtUtil.generateToken(user);
+
+            return ResponseEntity.ok(AuthResponseDTO.builder()
+                    .accessToken(newAccessToken)
+                    .refreshToken(newRefreshToken.getToken())
+                    .role(user.getRole().name())
+                    .build());
+        } catch (TokenRefreshException e) {
+            return unauthorized(e.getMessage());
+        }
+    }
+
+    // -------------------- Helpers --------------------
+    private ResponseEntity<Map<String, Object>> unauthorized(String message) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "Unauthorized", "message", message));
+    }
+
+    private ResponseEntity<Map<String, Object>> conflict(String message) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("error", "Conflict", "message", message));
     }
 }
