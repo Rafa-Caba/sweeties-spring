@@ -1,3 +1,5 @@
+DROP TABLE item_materials;
+
 CREATE TABLE item_materials (
     item_id BIGINT NOT NULL,
     material VARCHAR(255) NOT NULL,
