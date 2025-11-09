@@ -10,8 +10,6 @@ spring:
 
   flyway:
     enabled: true
-    # You DON'T need to set url/user/pass again.
-    # Flyway will automatically use the main spring.datasource.
     locations: classpath:db/migration
     baseline-on-migrate: true
     clean-disabled: true
@@ -26,9 +24,9 @@ spring:
 
   security:
     user:
-      name: ${ADMIN_USER:admin}
-      password: ${ADMIN_PASSWORD:123456}
-      roles: ${ADMIN_ROLES:ADMIN}
+      name: ${ADMIN_USER}
+      password: ${ADMIN_PASSWORD}
+      roles: ${ADMIN_ROLES}
 
   mail:
     host: ${MAIL_HOST:smtp.infinitummail.com}
@@ -60,10 +58,10 @@ server:
   port: 8080
 
 jwt:
-  secret: ${JWT_SECRET:change-me}
-  expiration: ${JWT_EXPIRATION:86400000}
+  secret: ${JWT_SECRET:}
+  expiration: ${JWT_EXPIRATION:10080}
 
 cloudinary:
-  cloud_name: ${CLOUDINARY_CLOUD_NAME:dr6b4izzt}
-  api_key: ${CLOUDINARY_API_KEY:764232222658472}
-  api_secret: ${CLOUDINARY_API_SECRET:uetGVSOjLMXIP-jmnhCy3WNNL8s}
+  cloud_name: ${CLOUDINARY_CLOUD_NAME}
+  api_key: ${CLOUDINARY_API_KEY}
+  api_secret: ${CLOUDINARY_API_SECRET}
