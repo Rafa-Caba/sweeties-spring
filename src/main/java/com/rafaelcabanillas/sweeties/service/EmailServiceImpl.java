@@ -2,6 +2,13 @@ package com.rafaelcabanillas.sweeties.service;
 
 import com.rafaelcabanillas.sweeties.dto.ContactRequestDTO;
 import com.rafaelcabanillas.sweeties.dto.OrderDTO;
+import com.sendgrid.Method;
+import com.sendgrid.Request;
+import com.sendgrid.Response;
+import com.sendgrid.SendGrid;
+import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.Content;
+import com.sendgrid.helpers.mail.objects.Email;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -14,15 +21,20 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.io.IOException;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class EmailServiceImpl implements EmailService {
 
-    private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
 
-    @Value("${spring.mail.username}")
+    // INJECT SendGrid config from environment variables
+    @Value("${SENDGRID_API_KEY}")
+    private String sendGridApiKey;
+
+    @Value("${SENDGRID_FROM_EMAIL}")
     private String fromEmail;
 
     @Value("${sweeties.admin-email}")
@@ -30,48 +42,55 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     @Async
-    public void sendOrderConfirmationToGuest(OrderDTO order) throws MessagingException {
-        // 1. Create the Thymeleaf context
+    public void sendOrderConfirmationToGuest(OrderDTO order) {
+        // This part is unchanged
         Context context = new Context();
         context.setVariable("order", order);
-
-        // 2. Process the template to get the HTML string
         String htmlContent = templateEngine.process("email/order-confirmation-guest", context);
 
-        // 3. Send the HTML email
-        sendHtmlEmail(order.getEmail(), "¡Confirmación de tu pedido Sweeties!", htmlContent);
+        // Call the new helper
+        sendHtmlEmail(
+                order.getEmail(),
+                "¡Confirmación de tu pedido Sweeties!",
+                htmlContent,
+                null // no reply-to
+        );
     }
 
     @Override
     @Async
-    public void sendOrderConfirmationToAdmin(OrderDTO order) throws MessagingException {
-        // 1. Create context
+    public void sendOrderConfirmationToAdmin(OrderDTO order) {
+        // This part is unchanged
         Context context = new Context();
         context.setVariable("order", order);
-
-        // 2. Process template
         String htmlContent = templateEngine.process("email/order-notification-admin", context);
 
-        // 3. Send email
-        sendHtmlEmail(adminEmail, "¡Nuevo Pedido Recibido! (ID: " + order.getId() + ")", htmlContent);
+        // Call the new helper
+        sendHtmlEmail(
+                adminEmail,
+                "¡Nuevo Pedido Recibido! (ID: " + order.getId() + ")",
+                htmlContent,
+                null // no reply-to
+        );
     }
 
     @Override
     @Async
-    public void sendContactFormToAdmin(ContactRequestDTO contactRequest) throws MessagingException {
-        // 1. Create context for the template
+    public void sendContactFormToAdmin(ContactRequestDTO contactRequest) {
+        // This part is unchanged
         Context context = new Context();
         context.setVariable("contact", contactRequest);
-
-        // 2. Process the new template
         String htmlContent = templateEngine.process("email/contact-notification-admin", context);
 
-        // 3. Send the email to the admin
         String subject = "Nuevo Mensaje de Contacto: " + (contactRequest.getSubject() != null ? contactRequest.getSubject() : contactRequest.getName());
 
-        // We use 'fromEmail' as the sender, but set the 'Reply-To' header
-        // to the guest's email so the admin can just click "Reply".
-        sendHtmlEmail(adminEmail, subject, htmlContent, contactRequest.getEmail());
+        // Call the new helper
+        sendHtmlEmail(
+                adminEmail,
+                subject,
+                htmlContent,
+                contactRequest.getEmail() // Set the guest's email as the reply-to
+        );
     }
 
     /**
@@ -82,22 +101,41 @@ public class EmailServiceImpl implements EmailService {
     }
 
     /**
-     * Overloaded helper method that includes an optional 'replyTo' address
+     * NEW: Helper method using SendGrid's API
      */
-    private void sendHtmlEmail(String to, String subject, String htmlBody, String replyTo) throws MessagingException {
-        MimeMessage mimeMessage = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
-
-        helper.setFrom(fromEmail);
-        helper.setTo(to);
-        helper.setSubject(subject);
-        helper.setText(htmlBody, true); // 'true' indicates this is HTML
+    private void sendHtmlEmail(String to, String subject, String htmlBody, String replyTo) {
+        // Use Email objects from SendGrid
+        Email from = new Email(fromEmail);
+        Email toEmail = new Email(to);
+        Content content = new Content("text/html", htmlBody);
+        Mail mail = new Mail(from, subject, toEmail, content);
 
         if (replyTo != null && !replyTo.isBlank()) {
-            helper.setReplyTo(replyTo); // <-- This is the magic
+            mail.setReplyTo(new Email(replyTo));
         }
 
-        mailSender.send(mimeMessage);
-        log.info("HTML Email sent successfully to {}", to);
+        // Create the SendGrid client
+        SendGrid sg = new SendGrid(sendGridApiKey);
+        Request request = new Request();
+
+        try {
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+
+            // Send the request
+            Response response = sg.api(request);
+
+            // Log the result
+            if (response.getStatusCode() >= 200 && response.getStatusCode() < 300) {
+                log.info("SendGrid Email sent successfully to {}. Status: {}", to, response.getStatusCode());
+            } else {
+                // Log a warning if SendGrid fails
+                log.warn("SendGrid Email failed to send to {}. Status: {}. Body: {}", to, response.getStatusCode(), response.getBody());
+            }
+        } catch (IOException ex) {
+            // Log an error if the API call itself fails
+            log.error("Error calling SendGrid API for email to {}", to, ex);
+        }
     }
 }
