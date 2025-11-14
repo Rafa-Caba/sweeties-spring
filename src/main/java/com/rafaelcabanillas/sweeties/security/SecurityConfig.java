@@ -70,7 +70,8 @@ public class SecurityConfig {
         cfg.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",
                 "http://127.0.0.1:*",
-                "https://sweeties-spring-production.up.railway.app"
+                "https://sweeties-spring-production.up.railway.app",
+                "https://sweeties-crochet.vercel.app"
         ));
         cfg.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
         cfg.setAllowedHeaders(List.of("Authorization","Content-Type","Accept","Origin"));
