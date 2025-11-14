@@ -28,6 +28,11 @@ spring:
       password: ${ADMIN_PASSWORD}
       roles: ${ADMIN_ROLES}
 
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+
 sweeties:
   admin-email: ${ADMIN_EMAIL:sweeties_crochet@infinitummail.com}
 

@@ -33,7 +33,10 @@ public class AuthController {
     // -------------------- LOGIN --------------------
     @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDTO req) {
-        Optional<User> userOpt = userRepository.findByEmail(req.getEmail());
+        // Use the 'username' field from the DTO for both searches
+        String loginIdentifier = req.getUsername().toLowerCase();
+        Optional<User> userOpt = userRepository.findByUsernameOrEmail(loginIdentifier, loginIdentifier);
+
         if (userOpt.isEmpty()) {
             return unauthorized("Invalid credentials");
         }
