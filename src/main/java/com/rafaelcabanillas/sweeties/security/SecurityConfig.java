@@ -89,3 +89,6 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 }
+
+
+//postgresql://postgres:poAGRkbgnORvRRmlNWWNRxZsiERIZASD@trolley.proxy.rlwy.net:17728/railway
