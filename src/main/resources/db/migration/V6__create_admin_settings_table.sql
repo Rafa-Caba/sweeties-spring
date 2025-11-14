@@ -1,6 +1,4 @@
 -- 1. Main Admin Settings Table
--- We use a single table with a fixed ID (1) for the singleton pattern.
--- Embedded objects (social, features, etc.) are flattened into columns.
 CREATE TABLE admin_settings (
     id BIGINT PRIMARY KEY,
 
@@ -65,67 +63,32 @@ CREATE TABLE admin_settings (
     -- Footer (Embedded)
     footer_legal_text VARCHAR(512) DEFAULT '© Sweeties | Crochet Arts',
 
+    -- About (from V20)
+    about_bio TEXT,
+    about_image_url VARCHAR(512),
+    about_image_public_id VARCHAR(255),
+
     -- Timestamps
-    created_at TIMESTAMP WITHOUT TIME ZONE,
-    updated_at TIMESTAMP WITHOUT TIME ZONE
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
 );
 
--- 2. SEO Meta Keywords Table (ElementCollection)
+-- 2. SEO Meta Keywords Table
 CREATE TABLE admin_settings_meta_keywords (
     admin_settings_id BIGINT NOT NULL REFERENCES admin_settings(id) ON DELETE CASCADE,
     meta_keyword VARCHAR(255)
 );
 
--- 3. Footer Auxiliary Links Table (ElementCollection of Embeddables)
+-- 3. Footer Auxiliary Links Table
 CREATE TABLE admin_settings_aux_links (
     admin_settings_id BIGINT NOT NULL REFERENCES admin_settings(id) ON DELETE CASCADE,
     label VARCHAR(100),
     url VARCHAR(512)
-    -- 'sort_order' column is automatically added by JPA for List ordering
 );
 
--- 4. CRITICAL: Insert the singleton row with ID 1 and all defaults
--- This ensures our service logic 'findById(1L)' always works.
+-- 4. CRITICAL: Insert the singleton row with ID 1
 INSERT INTO admin_settings (
-    id,
-    site_name,
-    default_theme_mode,
-    features_enable_orders,
-    features_enable_gallery,
-    features_enable_materials,
-    features_enable_contact_page,
-    features_enable_cart,
-    visibility_show_email,
-    visibility_show_phone,
-    visibility_show_whats_app,
-    visibility_show_address,
-    visibility_show_social,
-    home_hero_title,
-    home_hero_subtitle,
-    home_creator_name,
-    gallery_items_per_page,
-    footer_legal_text,
-    created_at,
-    updated_at
+    id, created_at, updated_at
 ) VALUES (
-    1,
-    'Sweeties | Crochet Arts',
-    'SYSTEM',
-    TRUE,
-    TRUE,
-    TRUE,
-    TRUE,
-    TRUE,
-    TRUE,
-    FALSE,
-    TRUE,
-    FALSE,
-    TRUE,
-    'Catálogo de muñecos de crochet',
-    'Hecho con amor — pedidos personalizados',
-    'por Sweeties | Crochet Arts',
-    10,
-    '© Sweeties | Crochet Arts',
-    CURRENT_TIMESTAMP,
-    CURRENT_TIMESTAMP
+    1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
 );
