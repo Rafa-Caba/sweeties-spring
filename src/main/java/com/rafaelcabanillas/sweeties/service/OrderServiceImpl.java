@@ -156,6 +156,21 @@ public class OrderServiceImpl implements OrderService {
         return orders.stream().map(this::toOrderDTO).toList();
     }
 
+    @Override
+    public OrderDTO trackOrder(Long orderId, String email) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado"));
+
+        // CRITICAL SECURITY CHECK
+        // Verify the email matches the order
+        if (!order.getEmail().equalsIgnoreCase(email)) {
+            // Generic error message to prevent fishing for IDs
+            throw new ResourceNotFoundException("Pedido no encontrado o email incorrecto");
+        }
+
+        return toOrderDTO(order);
+    }
+
     public void exportOrdersAsCsv(Writer writer) throws IOException {
         List<Order> orders = orderRepository.findAll(Sort.by("createdAt").descending());
         List<OrderDTO> orderDtos = orders.stream().map(this::toOrderDTO).toList();

@@ -15,4 +15,6 @@ public class UserDTO {
     private String bio;
     private String imageUrl;
     private String imagePublicId;
+
+    private Long themeId;
 }

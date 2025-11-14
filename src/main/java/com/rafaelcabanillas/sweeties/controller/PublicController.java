@@ -1,7 +1,10 @@
 package com.rafaelcabanillas.sweeties.controller;
 
 import com.rafaelcabanillas.sweeties.dto.ContactRequestDTO;
+import com.rafaelcabanillas.sweeties.dto.OrderDTO;
+import com.rafaelcabanillas.sweeties.dto.TrackOrderDTO;
 import com.rafaelcabanillas.sweeties.service.EmailService;
+import com.rafaelcabanillas.sweeties.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +22,7 @@ import java.util.Map;
 public class PublicController {
 
     private final EmailService emailService;
+    private final OrderService orderService;
 
     @PostMapping("/contact")
     public ResponseEntity<Map<String, String>> submitContactForm(@Valid @RequestBody ContactRequestDTO contactRequest) {
@@ -35,4 +39,11 @@ public class PublicController {
 
         return ResponseEntity.ok(Map.of("message", "Mensaje recibido. ¡Gracias por contactarnos!"));
     }
+
+    @PostMapping("/orders/track")
+    public ResponseEntity<OrderDTO> trackOrder(@Valid @RequestBody TrackOrderDTO dto) {
+        return ResponseEntity.ok(orderService.trackOrder(dto.getOrderId(), dto.getEmail()));
+    }
+
+
 }

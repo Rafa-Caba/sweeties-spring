@@ -21,6 +21,7 @@ public interface AdminSettingsService {
             MultipartFile logoLight,
             MultipartFile logoDark,
             MultipartFile favicon,
-            MultipartFile ogImage
+            MultipartFile ogImage,
+            MultipartFile aboutImage
     ) throws IOException;
 }

@@ -43,6 +43,8 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/api/admin/admin-settings/public").permitAll()
 
+                        .requestMatchers(HttpMethod.GET, "/api/themes").permitAll()
+
                         // (Optional) make catalog public:
                         // .requestMatchers(HttpMethod.GET, "/api/items/**").permitAll()
 

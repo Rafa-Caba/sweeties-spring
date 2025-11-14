@@ -19,6 +19,9 @@ public class UpdateAdminSettingsDTO {
     private String contactWhatsApp;
     private String contactAddress;
 
+    // About
+    private AboutUpdate about;
+
     // Social
     private AdminSettings.Social social;
 
@@ -68,6 +71,11 @@ public class UpdateAdminSettingsDTO {
         private String creatorName;
     }
     private HomeUpdate home;
+
+    @Data
+    public static class AboutUpdate {
+        private String bio;
+    }
 
     @Data
     public static class GalleryUpdate {

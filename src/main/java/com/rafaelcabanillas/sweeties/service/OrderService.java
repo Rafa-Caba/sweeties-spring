@@ -20,4 +20,5 @@ public interface OrderService {
         String status, OffsetDateTime from, OffsetDateTime to, Double minTotal, Double maxTotal,
         String phone, String email, int page, int size
     );
+    OrderDTO trackOrder(Long orderId, String email);
 }

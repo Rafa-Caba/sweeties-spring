@@ -63,7 +63,8 @@ public class AdminSettingsServiceImpl implements AdminSettingsService {
             MultipartFile logoLight,
             MultipartFile logoDark,
             MultipartFile favicon,
-            MultipartFile ogImage
+            MultipartFile ogImage,
+            MultipartFile aboutImage
     ) throws IOException {
 
         AdminSettings settings = getSingletonInstance();
@@ -80,6 +81,10 @@ public class AdminSettingsServiceImpl implements AdminSettingsService {
         updateField(dto.getPublicThemeGroup(), settings::setPublicThemeGroup);
         updateField(dto.getAdminThemeGroup(), settings::setAdminThemeGroup);
 
+        if (settings.getAbout() == null) {
+            settings.setAbout(new AdminSettings.About());
+        }
+
         // Nested objects
         if (dto.getSocial() != null) settings.setSocial(dto.getSocial());
 
@@ -87,6 +92,10 @@ public class AdminSettingsServiceImpl implements AdminSettingsService {
             updateField(dto.getHome().getHeroTitle(), settings.getHome()::setHeroTitle);
             updateField(dto.getHome().getHeroSubtitle(), settings.getHome()::setHeroSubtitle);
             updateField(dto.getHome().getCreatorName(), settings.getHome()::setCreatorName);
+        }
+
+        if (dto.getAbout() != null) {
+            updateField(dto.getAbout().getBio(), settings.getAbout()::setBio);
         }
 
         if (dto.getGallery() != null) {
@@ -170,6 +179,9 @@ public class AdminSettingsServiceImpl implements AdminSettingsService {
             } else if (fieldName.equals("ogImage")) {
                 settings.getSeo().setOgImageUrl(url);
                 settings.getSeo().setOgImagePublicId(publicId);
+            } else if (fieldName.equals("aboutImage")) {
+                settings.getAbout().setImageUrl(url);
+                settings.getAbout().setImagePublicId(publicId);
             }
         };
 
@@ -178,6 +190,7 @@ public class AdminSettingsServiceImpl implements AdminSettingsService {
         uploadHandler.accept(logoDark, "logoDark");
         uploadHandler.accept(favicon, "favicon");
         uploadHandler.accept(ogImage, "ogImage");
+        uploadHandler.accept(aboutImage, "aboutImage");
 
         // --- 3. Save and return ---
         AdminSettings updatedSettings = settingsRepository.save(settings);
@@ -200,6 +213,7 @@ public class AdminSettingsServiceImpl implements AdminSettingsService {
                 .contactPhone(s.getContactPhone())
                 .contactWhatsApp(s.getContactWhatsApp())
                 .contactAddress(s.getContactAddress())
+                .about(s.getAbout() != null ? s.getAbout() : new AdminSettings.About())
                 .social(s.getSocial())
                 .defaultThemeMode(s.getDefaultThemeMode())
                 .publicThemeGroup(s.getPublicThemeGroup())
@@ -227,6 +241,7 @@ public class AdminSettingsServiceImpl implements AdminSettingsService {
                 .contactPhone(v.isShowPhone() ? s.getContactPhone() : null)
                 .contactWhatsApp(v.isShowWhatsApp() ? s.getContactWhatsApp() : null)
                 .contactAddress(v.isShowAddress() ? s.getContactAddress() : null)
+                .about(s.getAbout() != null ? s.getAbout() : new AdminSettings.About())
                 .social(v.isShowSocial() ? s.getSocial() : null)
                 .defaultThemeMode(s.getDefaultThemeMode())
                 .publicThemeGroup(s.getPublicThemeGroup())

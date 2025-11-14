@@ -21,6 +21,8 @@ public class PublicAdminSettingsDTO {
     private String contactWhatsApp;
     private String contactAddress;
 
+    private AdminSettings.About about;
+
     // Social
     private AdminSettings.Social social;
 

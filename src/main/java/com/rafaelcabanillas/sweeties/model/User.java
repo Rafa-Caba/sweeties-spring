@@ -1,5 +1,6 @@
 package com.rafaelcabanillas.sweeties.model;
 
+import com.rafaelcabanillas.sweeties.model.Theme;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -43,4 +44,8 @@ public class User {
     protected void onUpdate() { updatedAt = LocalDateTime.now(); }
 
     public enum Role { ADMIN, EDITOR, VIEWER, GUEST }
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "theme_id")
+    private Theme theme;
 }

@@ -101,6 +101,7 @@ public class UserServiceImpl implements UserService {
                 .bio(user.getBio())
                 .imageUrl(user.getImageUrl())
                 .imagePublicId(user.getImagePublicId())
+                .themeId(user.getTheme() != null ? user.getTheme().getId() : null)
                 .build();
     }
 }

@@ -55,11 +55,12 @@ public class AdminSettingsController {
             @RequestPart(value = "logoLight", required = false) MultipartFile logoLight,
             @RequestPart(value = "logoDark", required = false) MultipartFile logoDark,
             @RequestPart(value = "favicon", required = false) MultipartFile favicon,
-            @RequestPart(value = "ogImage", required = false) MultipartFile ogImage
+            @RequestPart(value = "ogImage", required = false) MultipartFile ogImage,
+            @RequestPart(value = "aboutImage", required = false) MultipartFile aboutImage
     ) throws IOException {
 
         AdminSettingsDTO updated = adminSettingsService.updateAdminSettings(
-                settingsDTO, logoLight, logoDark, favicon, ogImage
+                settingsDTO, logoLight, logoDark, favicon, ogImage, aboutImage
         );
         return ResponseEntity.ok(updated);
     }

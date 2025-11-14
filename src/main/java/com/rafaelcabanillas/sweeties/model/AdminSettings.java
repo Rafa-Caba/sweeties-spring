@@ -37,6 +37,15 @@ public class AdminSettings {
     private String contactWhatsApp;
     private String contactAddress;
 
+    @Embedded
+    @Builder.Default
+    @AttributeOverrides({
+            @AttributeOverride(name = "bio", column = @Column(name = "about_bio", columnDefinition = "TEXT")),
+            @AttributeOverride(name = "imageUrl", column = @Column(name = "about_image_url")),
+            @AttributeOverride(name = "imagePublicId", column = @Column(name = "about_image_public_id"))
+    })
+    private About about = new About();
+
     // --- Embeddables for nested objects ---
     // We use @AttributeOverrides to be explicit about column names
 
@@ -235,5 +244,17 @@ public class AdminSettings {
     public static class AuxiliaryLink {
         private String label;
         private String url;
+    }
+
+    @Embeddable
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class About {
+        @Column(columnDefinition = "TEXT")
+        private String bio;
+        private String imageUrl;
+        private String imagePublicId;
     }
 }
